@@ -1,0 +1,180 @@
+---
+title: "analysis_AayushGaywala"
+output: html_document
+date: '2022-07-24'
+---
+
+Aayush Gaywala
+Mr. Jose Aveldanes
+Section #1
+Data Science w/ R and Python
+Final Project - Linear Regression Analysis
+
+# Description of the Model
+
+Data Question: What is the relationship between fertility and examination (fitness)?
+
+Modeling Objective: To predict fertility given examination.
+
+Data: This data set, swiss, is a built-in data set of R that has 47 observations on 6 variables. When Switzerland was developing and in a demographic transition (1888), this survey took data, such as fertility measure and other socio-economic factors, from 47 French-speaking "provinces". 
+
+Response Variable: Standardized Fertility Measure
+
+The model used in this analysis is a linear regression model. It is a very simple form of supervised machine learning.
+I chose linear regression for this specific model because this relationship can be modeled well with a straight line.
+I have not used interaction terms in my model.
+
+# Exploratory Data Analysis
+
+Exploratory Data Analysis is just learning about your data and the relationships within it.
+
+To run most of the code below, one needs to install the following packages: dplyr, ggplot2, and ggpubr.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+```
+
+First, we will just get to know the data set and its specifications.
+
+```{r}
+head(swiss)
+names(swiss)
+dim(swiss)
+```
+
+Then, we can look at the distributions for each of the variables.
+
+```{r}
+par(mfrow = c(3, 2))
+hist(swiss$Fertility)
+hist(swiss$Agriculture)
+hist(swiss$Examination)
+hist(swiss$Catholic)
+hist(swiss$Education)
+hist(swiss$Infant.Mortality)
+```
+
+Above you can see that our concerned variables (examination and fertility) are generally normally distributed.
+
+By using the correlation function, we learn that there is negative relationship between both of them.
+
+```{r}
+cor(swiss$Fertility, swiss$Examination)
+```
+
+The below code chunk creates a scatterplot with a line of best fit and the equation in order to help the reader visualize the relationship between the data.
+
+The reader should note that the y-axis does not start from zero. It instead starts from ~ 30.
+
+Another important note is that the below graph utilizes all of the data, not just the train and test data sets.
+
+```{r}
+lm.graph <- swiss %>% ggplot(aes(x = Examination, y = Fertility)) + geom_point(size = 5, alpha = 0.75) + geom_smooth(method = "lm", se = F, col = "blue") + stat_regline_equation(label.x = 30, label.y = 88) + ggtitle("Examination vs. Fertility")
+print(lm.graph)
+```
+
+# Output of the Final Model
+
+By setting the seed, we can guarantee re-producible results.
+
+Then, partition the data (80:20 split) in order to have a train data set (to train our model off of) and a test data set (for predicting after the model has been created). 
+
+```{r}
+set.seed(47)
+index <- sample(1:nrow(cars), 0.8*nrow(cars))
+train_swiss <- swiss[index, ]
+test_swiss <- swiss[-index, ]
+```
+
+By using base R, I made a linear regression model and then used summary() to summarize the model and find the p-values, coefficients, intercepts, etc.
+
+Running this code chunk will give you those statistics.
+
+```{r}
+linear_regression <- lm(Fertility~Examination, data = train_swiss)
+summary(linear_regression)
+```
+
+Once we have trained the model, we can now use it to predict our test data values.
+
+```{r}
+predictions <- predict(linear_regression, test_swiss)
+print(predictions)
+```
+
+We can now combine the actuals and the predictions into a data frame and calculate multiple statistics such as Min-Max Accuracy and Mean Absolute Percentage Error. 
+
+```{r}
+actualsAndPredicteds <- data.frame(cbind(actuals = test_swiss$Fertility, predicteds = predictions))
+actualsAndPredicteds
+```
+
+Below is a code chunk that calculates some statistics for error.
+
+``` {r}
+# Min-Max Accuracy
+
+minMaxAcc <- mean(apply(actualsAndPredicteds,1, min)/apply(actualsAndPredicteds,1, max))
+
+minMaxAcc
+
+# Mean Absolute Percentage Error
+mape <- mean(abs((actualsAndPredicteds$predicteds - actualsAndPredicteds$actuals))/actualsAndPredicteds$actuals)
+ 
+mape 
+```
+Min Max Accuracy being about 0.9 is quite good, and Mean Absolute Percentage Error being about 0.1 is also quite good.
+
+Conclusion: 
+
+By using the model, I have found a weak relationship between Examination and Fertility rates (p-value < 0.001, Adjusted R-squared - 0.3778). This relationship is a negative one with y-intercept at (0, 86.4372) and a decrease of 0.99 in Fertility for every increase in 1 Examination unit. 
+
+# Discussion of the Assumptions for the Final Model
+
+There are 4 general assumptions for every linear regression model.
+
+Independence of Observations:
+- This depends on if Examination and Fertility as statistics were collected independently of each other and were collected using valid statistical methods. 
+- We can only hope that the R Datasets package collected data properly.
+
+Normality (following a indepedent distribution):
+- We can check if our dependent and independent variables roughly follow a normal distribution.
+
+```{r}
+par(mfrow = c(1, 2))
+hist(swiss$Fertility)
+hist(swiss$Examination)
+```
+
+- Both are very roughly normal distributed. What matters is the fact that most of the data is concentrated in the middle.
+
+Linearity:
+- This is whether or not the relationship between the variables can be represented by a linear equation.
+
+```{r}
+plot(Fertility~Examination, data = swiss)
+```
+
+- Yes! It does looks like the data can be represented through a linear equation.
+
+Homogeneity of variance:
+- This is a test to see if the size of error of our prediction doesn't change a lot over the range of our independent variable.
+
+```{r}
+par(mfrow = c(2, 2))
+plot(linear_regression)
+```
+
+- As we can see from the plot, the residuals stay around the center line most of the time, so we can see that this assumption is true.
+
+# Interpretations of the Coefficents
+
+The correlation between physical ability and fertility rates seems rather odd at first.
+However, the relationship can be explained through science. When a female/male does physical activity, hormones related to reproductive systems may be suppressed which causes infertility.
+Seeing as this data was collected in 1888 and that 1888 was a much different time, this relationship can be explained by a multitude of things.
+
+# Additional Work
+
+As the final model is a result of editing and refining the models, I didn't save previous in progress models. Therefore, no additional work is present.
